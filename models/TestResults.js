@@ -1,37 +1,66 @@
 const mongoose = require('mongoose');
-const AutoIncrement = require('mongoose-sequence')(mongoose)
 
-const testresultSchema = new mongoose.Schema(
-    {
+// Blood test categories enum
+const bloodTestCategories = [
+    'Routine hematology',
+    'Coagulation',
+    'Routine chemistry',
+    'Renal function',
+    'Liver function',
+    'Pancreas function',
+    'Endocrinology',
+    'Tumor marker'
+];
+
+// Test types enum
+const testTypes = [
+    'Blood test',
+    'Urine test',
+    'Ultrasound',
+    'X-ray',
+    'CT scan',
+    'ECG'
+];
+
+const testResultSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: 'User',
+        ref: 'User'
     },
-    title: {
+    testName: {
         type: String,
         required: true,
+        enum: testTypes, // Ensure the test name is one of the valid types
     },
-    text: {
+    bloodTestCategory: {
         type: String,
-        required: true,
-
-
+        enum: bloodTestCategories, // Only applicable if the test is a blood test
+        required: function() {
+            return this.testName === 'Blood test'; // Only required for blood tests
+        }
     },
-    completed: {
-        type: Boolean,
-        default: false
+    result: {
+        type: String,
+        required: true
     },
-},
-{
-    timestamps: true,
-}
-)
-testresultSchema.plugin(AutoIncrement, {
-    inc_field: 'ticket',
-    id: 'ticketNums',
-    start_seq: 1000
-})
+    status: {
+        type: String,
+        enum: ['Pending', 'Completed', 'Reviewed'],
+        default: 'Pending'
+    },
+    date: {
+        type: Date,
+        default: Date.now
+    },
+    prescribedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Doctor', // Reference to the doctor who prescribed the test
+        required: true
+    },
+}, {
+    timestamps: true
+});
 
-
-module.exports = mongoose.model('TestResult', testresultSchema)
+// Model
+module.exports = mongoose.model('TestResult', testResultSchema);
